@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Search CRM — Montrez Cox</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3347;
+    --accent: #4f8ef7;
+    --accent2: #7c5cbf;
+    --green: #34c98d;
+    --yellow: #f5c842;
+    --red: #f56565;
+    --orange: #f5924e;
+    --text: #e2e8f0;
+    --muted: #7a8298;
+    --white: #ffffff;
+  }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: 220px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 0; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
+  }
+  .sidebar-logo { padding: 22px 20px 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo h2 { font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; }
+  .sidebar-logo p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .nav-section { padding: 12px 12px 4px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 20px; cursor: pointer;
+    font-size: 13px; color: var(--muted); border-left: 3px solid transparent; transition: all 0.15s;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(79,142,247,0.1); color: var(--accent); border-left-color: var(--accent); }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+  .sidebar-footer { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+
+  /* MAIN */
+  #main { margin-left: 220px; flex: 1; padding: 28px 32px; min-height: 100vh; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .page-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+  /* CARDS */
+  .cards-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .card-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .card-value { font-size: 28px; font-weight: 700; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .card.blue .card-value { color: var(--accent); }
+  .card.green .card-value { color: var(--green); }
+  .card.yellow .card-value { color: var(--yellow); }
+  .card.red .card-value { color: var(--red); }
+  .card.purple .card-value { color: var(--accent2); }
+  .card-accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 10px 10px 0 0; }
+  .card.blue .card-accent-bar { background: var(--accent); }
+  .card.green .card-accent-bar { background: var(--green); }
+  .card.yellow .card-accent-bar { background: var(--yellow); }
+  .card.red .card-accent-bar { background: var(--red); }
+  .card.purple .card-accent-bar { background: var(--accent2); }
+
+  /* TABLES */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .table-title { font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(79,142,247,0.03); }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-blue { background: rgba(79,142,247,0.15); color: var(--accent); }
+  .badge-green { background: rgba(52,201,141,0.15); color: var(--green); }
+  .badge-yellow { background: rgba(245,200,66,0.15); color: var(--yellow); }
+  .badge-red { background: rgba(245,101,101,0.15); color: var(--red); }
+  .badge-orange { background: rgba(245,146,78,0.15); color: var(--orange); }
+  .badge-purple { background: rgba(124,92,191,0.15); color: var(--accent2); }
+  .badge-gray { background: rgba(122,130,152,0.15); color: var(--muted); }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 7px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #3a7ae8; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: rgba(245,101,101,0.15); color: var(--red); border: 1px solid rgba(245,101,101,0.3); }
+  .btn-danger:hover { background: rgba(245,101,101,0.25); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { padding: 6px 8px; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--muted); font-size: 14px; transition: all 0.15s; }
+  .btn-icon:hover { background: var(--surface2); color: var(--text); }
+
+  /* SEARCH & FILTER */
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  input[type="text"], input[type="date"], input[type="email"], input[type="url"], select, textarea {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+    color: var(--text); font-size: 13px; padding: 8px 12px; outline: none;
+    transition: border-color 0.15s; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .search-input { flex: 1; min-width: 200px; max-width: 320px; }
+  select { cursor: pointer; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 28px; width: 600px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+    position: relative;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; }
+  textarea { resize: vertical; min-height: 80px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+  /* FOLLOW-UP ALERTS */
+  .alert-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+  }
+  .alert-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .alert-dot.red { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .alert-dot.orange { background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+  .alert-dot.yellow { background: var(--yellow); }
+  .alert-content { flex: 1; }
+  .alert-title { font-size: 14px; font-weight: 600; }
+  .alert-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* TEMPLATES */
+  .template-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+  .template-header { padding: 14px 18px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .template-header h3 { font-size: 14px; font-weight: 600; }
+  .template-body { padding: 16px 18px; font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; font-family: inherit; }
+  .copy-btn { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3); color: var(--accent); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.15s; }
+  .copy-btn:hover { background: rgba(79,142,247,0.2); }
+  .copy-btn.copied { background: rgba(52,201,141,0.15); border-color: rgba(52,201,141,0.3); color: var(--green); }
+
+  /* CRITERIA */
+  .criteria-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .criteria-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .criteria-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .criteria-row:last-child { border-bottom: none; }
+  .criteria-key { color: var(--muted); }
+  .criteria-val { font-weight: 600; color: var(--text); }
+
+  /* PIPELINE PROGRESS */
+  .pipeline { display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+  .pipeline-stage { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; flex: 1; min-width: 110px; text-align: center; }
+  .pipeline-num { font-size: 24px; font-weight: 700; }
+  .pipeline-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+  /* DOUBLE SUBMIT WARNING */
+  .warn-row td { background: rgba(245,200,66,0.04); }
+  .warn-icon { color: var(--yellow); }
+
+  /* TABS within pages */
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .tab { padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tab:hover { color: var(--text); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* SCROLL */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    #sidebar { width: 60px; }
+    .sidebar-logo, .nav-section, .nav-item span, .sidebar-footer { display: none; }
+    .nav-item { justify-content: center; padding: 12px; }
+    #main { margin-left: 60px; padding: 20px 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <h2>⚡ Job Hunt CRM</h2>
+    <p>Montrez Cox</p>
+  </div>
+  <div class="nav-section">Main</div>
+  <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+  <div class="nav-item" onclick="showPage('tracker')"><span class="nav-icon">📋</span><span>Tracker</span></div>
+  <div class="nav-item" onclick="showPage('followups')"><span class="nav-icon">🔔</span><span>Follow-Ups</span></div>
+  <div class="nav-section">Tools</div>
+  <div class="nav-item" onclick="showPage('templates')"><span class="nav-icon">✉️</span><span>Templates</span></div>
+  <div class="nav-item" onclick="showPage('criteria')"><span class="nav-icon">🎯</span><span>My Criteria</span></div>
+  <div class="nav-section">AI Tools</div>
+  <div class="nav-item" onclick="showPage('resume-tailor')"><span class="nav-icon">🤖</span><span>Resume Tailor</span></div>
+  <div class="nav-item" onclick="showPage('ai-email')"><span class="nav-icon">⚡</span><span>AI Email Draft</span></div>
+  <div class="sidebar-footer">
+    <div style="margin-bottom:6px;"><span id="server-indicator" style="cursor:help;font-size:11px;">⏳ Connecting...</span></div>
+    Last saved: <span id="lastSaved">Never</span><br>
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button onclick="exportContacts()" style="flex:1;background:rgba(52,201,141,0.15);border:1px solid rgba(52,201,141,0.3);color:#34c98d;border-radius:5px;padding:5px 4px;font-size:10px;cursor:pointer;font-weight:600;">⬇ Export</button>
+      <label style="flex:1;background:rgba(79,142,247,0.15);border:1px solid rgba(79,142,247,0.3);color:#4f8ef7;border-radius:5px;padding:5px 4px;font-size:10px;cursor:pointer;font-weight:600;text-align:center;">⬆ Import<input type="file" accept=".json" onchange="importContacts(event)" style="display:none;"></label>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page active">
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle" id="dash-subtitle">Your weekly job search overview</div>
+
+    <div class="cards-row" id="stat-cards">
+      <div class="card blue"><div class="card-accent-bar"></div><div class="card-label">Total Contacts</div><div class="card-value" id="stat-total">0</div><div class="card-sub">Recruiters &amp; companies</div></div>
+      <div class="card yellow"><div class="card-accent-bar"></div><div class="card-label">Awaiting Response</div><div class="card-value" id="stat-awaiting">0</div><div class="card-sub">Emails sent, no reply</div></div>
+      <div class="card red"><div class="card-accent-bar"></div><div class="card-label">Overdue Follow-Ups</div><div class="card-value" id="stat-overdue">0</div><div class="card-sub">Action needed now</div></div>
+      <div class="card green"><div class="card-accent-bar"></div><div class="card-label">Responses Received</div><div class="card-value" id="stat-responses">0</div><div class="card-sub">Active conversations</div></div>
+      <div class="card purple"><div class="card-accent-bar"></div><div class="card-label">Interviews</div><div class="card-value" id="stat-interviews">0</div><div class="card-sub">Scheduled or completed</div></div>
+    </div>
+
+    <div style="margin-bottom: 28px;">
+      <div class="table-header" style="padding: 0; padding-bottom: 14px;">
+        <div class="table-title">📍 Pipeline Status</div>
+      </div>
+      <div class="pipeline" id="pipeline-stages"></div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title">🔔 Upcoming Follow-Ups (next 7 days)</div>
+        <button class="btn btn-secondary btn-sm" onclick="showPage('followups')">View All</button>
+      </div>
+      <table>
+        <thead><tr><th>Company</th><th>Contact</th><th>Job Title</th><th>Follow-Up Date</th><th>Status</th></tr></thead>
+        <tbody id="dash-followups"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TRACKER -->
+  <div id="page-tracker" class="page">
+    <div class="page-title">Recruiter Tracker</div>
+    <div class="page-subtitle">All contacts, applications, and statuses in one place</div>
+    <div class="toolbar">
+      <input type="text" class="search-input" placeholder="🔍 Search company, name, title..." id="search-input" oninput="renderTracker()">
+      <select id="filter-status" onchange="renderTracker()" style="min-width:160px;">
+        <option value="">All Statuses</option>
+        <option value="not_contacted">Not Contacted</option>
+        <option value="email_sent">Email Sent</option>
+        <option value="responded">Responded</option>
+        <option value="interview_scheduled">Interview Scheduled</option>
+        <option value="submitted">Submitted</option>
+        <option value="offer">Offer Received</option>
+        <option value="rejected">Rejected</option>
+        <option value="withdrawn">Withdrawn</option>
+      </select>
+      <select id="filter-location" onchange="renderTracker()" style="min-width:140px;">
+        <option value="">All Locations</option>
+        <option value="remote">Remote</option>
+        <option value="hybrid">Hybrid</option>
+        <option value="onsite">Onsite</option>
+      </select>
+      <button class="btn btn-primary" onclick="openModal()">+ Add Contact</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Company</th>
+            <th>Contact</th>
+            <th>Job Title</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Follow-Up</th>
+            <th>⚠️</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tracker-tbody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px; font-size:12px; color:var(--muted);" id="tracker-count"></div>
+  </div>
+
+  <!-- FOLLOW-UPS -->
+  <div id="page-followups" class="page">
+    <div class="page-title">Follow-Up Manager</div>
+    <div class="page-subtitle">Stay on top of every conversation — never let a lead go cold</div>
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchFollowupTab('overdue', this)">🔴 Overdue</div>
+      <div class="tab" onclick="switchFollowupTab('today', this)">🟠 Due Today</div>
+      <div class="tab" onclick="switchFollowupTab('week', this)">🟡 This Week</div>
+      <div class="tab" onclick="switchFollowupTab('all', this)">All</div>
+    </div>
+    <div id="followup-list"></div>
+  </div>
+
+  <!-- TEMPLATES -->
+  <div id="page-templates" class="page">
+    <div class="page-title">Email Templates</div>
+    <div class="page-subtitle">Copy and customize these for every stage of your outreach</div>
+    <div id="templates-container"></div>
+  </div>
+
+  <!-- CRITERIA -->
+  <div id="page-criteria" class="page">
+    <div class="page-title">My Job Criteria</div>
+    <div class="page-subtitle">Your non-negotiables — used to evaluate every opportunity</div>
+
+    <div class="criteria-card" id="criteria-display">
+      <div class="criteria-title">Current Criteria</div>
+      <div id="criteria-rows"></div>
+      <button class="btn btn-secondary" style="margin-top:14px;" onclick="openCriteriaModal()">✏️ Edit Criteria</button>
+    </div>
+
+    <div class="criteria-card">
+      <div class="criteria-title">🛡️ Anti-Double Submit Protocol</div>
+      <p style="font-size:13px; color:var(--muted); line-height:1.7;">
+        Before any recruiter submits your application, require them to confirm:<br>
+        1. The exact company name and state/location<br>
+        2. The specific job title and req ID if available<br>
+        3. That no other recruiter has already submitted you<br><br>
+        <strong style="color:var(--text);">Rule:</strong> If you can't get a company name confirmation, do not allow submission.
+        Track which recruiter submitted you to which company in the tracker's "Submitted By" field.
+      </p>
+    </div>
+
+    <div class="criteria-card">
+      <div class="criteria-title">📊 Weekly Check-In Process</div>
+      <p style="font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:12px;">
+        Every week, spend ~60 minutes on your job search:
+      </p>
+      <div style="font-size:13px; line-height:2;">
+        <div>✅ <strong>Review</strong> overdue follow-ups → send catch-up emails</div>
+        <div>✅ <strong>Check</strong> responses tab → move conversations forward</div>
+        <div>✅ <strong>Add</strong> any new contacts from LinkedIn</div>
+        <div>✅ <strong>Update</strong> status of all active applications</div>
+        <div>✅ <strong>Set</strong> follow-up dates for anything without one</div>
+        <div>✅ <strong>Review</strong> criteria — are you applying to the right roles?</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- RESUME TAILOR -->
+  <div id="page-resume-tailor" class="page">
+    <div class="page-title">AI Resume Tailor</div>
+    <div class="page-subtitle">Paste a job description → get tailored bullet points, keywords, and match score powered by Gemini</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="table-wrap" style="padding:20px;">
+        <div class="table-title" style="margin-bottom:14px;">📋 Job Description</div>
+        <textarea id="rt-jobdesc" style="width:100%;min-height:220px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-size:13px;line-height:1.6;resize:vertical;" placeholder="Paste the full job description here..."></textarea>
+      </div>
+      <div class="table-wrap" style="padding:20px;">
+        <div class="table-title" style="margin-bottom:14px;">👤 Your Background</div>
+        <textarea id="rt-background" style="width:100%;min-height:220px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-size:13px;line-height:1.6;resize:vertical;" placeholder="3-5 sentences about your background, key skills, and experience..."></textarea>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px;">
+          <label style="font-size:12px;color:var(--muted);">Bullet points:</label>
+          <select id="rt-bullets" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 10px;font-size:13px;">
+            <option value="4">4</option>
+            <option value="5" selected>5</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+          </select>
+          <button class="btn btn-primary" onclick="runResumeTailor()" id="rt-btn" style="margin-left:auto;">✨ Tailor Resume</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="rt-gemini-warning" style="display:none;background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:16px;">
+      ⚠️ <strong>Gemini API key needed.</strong> Enter your key below to enable AI features.
+    </div>
+
+    <div class="table-wrap" style="padding:20px;min-height:120px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="table-title">✨ AI Output</div>
+        <button class="copy-btn" id="rt-copy-btn" onclick="copyAIOutput('rt-output','rt-copy-btn')" style="display:none;">Copy</button>
+      </div>
+      <div id="rt-output" style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text);">
+        <span style="color:var(--muted);">Results will appear here after you click "Tailor Resume"...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI EMAIL DRAFT -->
+  <div id="page-ai-email" class="page">
+    <div class="page-title">AI Email Drafter</div>
+    <div class="page-subtitle">Generate personalized outreach emails for any contact — powered by Gemini</div>
+
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px;">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="form-group">
+          <label class="form-label">Template Type</label>
+          <select id="ae-template">
+            <option value="initial_outreach">Initial Outreach</option>
+            <option value="follow_up">Follow-Up (No Response)</option>
+            <option value="criteria_statement">Criteria Statement</option>
+            <option value="anti_double_submit">Anti-Double Submit Confirm</option>
+            <option value="interview_thank_you">Interview Thank You</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Name</label>
+          <input type="text" id="ae-company" placeholder="Acme Corp">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Recruiter Name</label>
+          <input type="text" id="ae-recruiter" placeholder="Jane Smith">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Job Title</label>
+          <input type="text" id="ae-jobtitle" placeholder="Sales Engineer">
+        </div>
+        <div class="form-group" style="grid-column:2/-1;">
+          <label class="form-label">Extra Context (optional)</label>
+          <input type="text" id="ae-context" placeholder="e.g. We connected at a networking event, or they reached out to me first">
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-primary" onclick="runEmailDraft()" id="ae-btn">⚡ Generate Email</button>
+        <span style="font-size:12px;color:var(--muted);">Or pick from your tracker:</span>
+        <select id="ae-contact-picker" onchange="fillFromContact()" style="flex:1;max-width:280px;">
+          <option value="">— Select a tracked contact —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="padding:20px;min-height:120px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="table-title">✉️ Generated Email</div>
+        <button class="copy-btn" id="ae-copy-btn" onclick="copyAIOutput('ae-output','ae-copy-btn')" style="display:none;">Copy</button>
+      </div>
+      <div id="ae-output" style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text);">
+        <span style="color:var(--muted);">Your personalized email will appear here...</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modal-title">Add New Contact</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Company Name *</label>
+        <input type="text" id="f-company" placeholder="Acme Corp">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact Name</label>
+        <input type="text" id="f-contact" placeholder="Jane Smith">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="f-email" placeholder="recruiter@company.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">LinkedIn URL</label>
+        <input type="url" id="f-linkedin" placeholder="linkedin.com/in/...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job Title</label>
+        <input type="text" id="f-jobtitle" placeholder="Senior Software Engineer">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job Posting URL</label>
+        <input type="url" id="f-joburl" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Location Type</label>
+        <select id="f-location">
+          <option value="remote">Remote</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="onsite">Onsite</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Salary Range</label>
+        <input type="text" id="f-salary" placeholder="$80k – $120k">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="f-status">
+          <option value="not_contacted">Not Contacted</option>
+          <option value="email_sent">Email Sent</option>
+          <option value="responded">Responded</option>
+          <option value="interview_scheduled">Interview Scheduled</option>
+          <option value="submitted">Submitted</option>
+          <option value="offer">Offer Received</option>
+          <option value="rejected">Rejected</option>
+          <option value="withdrawn">Withdrawn</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Follow-Up Date</label>
+        <input type="date" id="f-followup">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Recruiter Confirmed Company?</label>
+        <select id="f-confirmed">
+          <option value="false">No — Not Yet Confirmed</option>
+          <option value="true">Yes — Confirmed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Submitted By (recruiter name)</label>
+        <input type="text" id="f-submittedby" placeholder="If submitted, who?">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Notes</label>
+        <textarea id="f-notes" placeholder="Context, conversation history, any details..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- CRITERIA MODAL -->
+<div class="modal-overlay" id="criteria-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeCriteriaModal()">✕</button>
+    <div class="modal-title">Edit My Job Criteria</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Work Type</label>
+        <select id="c-worktype">
+          <option value="Remote Only">Remote Only</option>
+          <option value="Remote or Hybrid">Remote or Hybrid</option>
+          <option value="Open to All">Open to All</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Min Salary</label>
+        <input type="text" id="c-minsalary" placeholder="$80,000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preferred Roles</label>
+        <input type="text" id="c-roles" placeholder="Sales Engineer, Solutions Architect...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Geography</label>
+        <input type="text" id="c-geo" placeholder="US-based remote preferred">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Company Size</label>
+        <select id="c-size">
+          <option value="Small (1–100)">Small (1–100)</option>
+          <option value="Mid-size (100–1000)">Mid-size (100–1000)</option>
+          <option value="Enterprise (1000+)">Enterprise (1000+)</option>
+          <option value="Any">Any</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target # of Active Applications</label>
+        <input type="text" id="c-target" placeholder="100">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Must-Haves (deal breakers if missing)</label>
+        <textarea id="c-musthaves" placeholder="e.g. Remote flexibility, base salary above $80k, US resident allowed..."></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Nice-to-Haves</label>
+        <textarea id="c-nicetohaves" placeholder="e.g. Healthcare, 401k match, equity, flexible hours..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeCriteriaModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCriteria()">Save Criteria</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DATA LAYER ====================
+const STORAGE_KEY  = 'jsc_montrez_2026';
+const CRITERIA_KEY = 'jsc_criteria_2026';
+const API_BASE     = 'http://localhost:8765';
+let   serverOnline = false;
+
+async function detectServer() {
+  try {
+    const r = await fetch(`${API_BASE}/api/status`, { signal: AbortSignal.timeout(800) });
+    serverOnline = r.ok;
+  } catch { serverOnline = false; }
+  const indicator = document.getElementById('server-indicator');
+  if (indicator) {
+    indicator.textContent = serverOnline ? '🟢 Synced' : '🔴 Local only';
+    indicator.title = serverOnline
+      ? 'Connected to local sync server — data auto-saves to contacts.json'
+      : 'Sync server offline — run: python3 server.py';
+  }
+}
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  document.getElementById('lastSaved').textContent = new Date().toLocaleTimeString();
+  if (serverOnline) {
+    fetch(`${API_BASE}/api/contacts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).catch(() => {});
+  }
+}
+
+function loadCriteria() {
+  try {
+    return JSON.parse(localStorage.getItem(CRITERIA_KEY)) || {
+      worktype: 'Remote Only', minsalary: '$80,000', roles: 'Sales Engineer, Solutions Architect, Pre-Sales',
+      geo: 'US-based remote preferred', size: 'Small (1–100)', target: '100',
+      musthaves: 'Remote flexibility, base salary above $80k, US resident allowed',
+      nicetohaves: 'Healthcare, 401k match, equity, flexible hours'
+    };
+  } catch { return {}; }
+}
+function saveCriteriaData(c) {
+  localStorage.setItem(CRITERIA_KEY, JSON.stringify(c));
+  if (serverOnline) {
+    fetch(`${API_BASE}/api/criteria`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(c),
+    }).catch(() => {});
+  }
+}
+
+async function syncFromServer() {
+  if (!serverOnline) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/contacts`);
+    if (!r.ok) return;
+    const serverContacts = await r.json();
+    if (!Array.isArray(serverContacts) || serverContacts.length === 0) return;
+
+    const localContacts = loadData();
+    if (serverContacts.length >= localContacts.length) {
+      // Server has same or more data — use it as source of truth
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serverContacts));
+      contacts = serverContacts;
+      renderDashboard(); renderTracker(); populateContactPicker();
+      const count = serverContacts.length;
+      document.getElementById('lastSaved').textContent =
+        `Synced ${count} contacts ✓ ${new Date().toLocaleTimeString()}`;
+    }
+  } catch { /* silent */ }
+}
+
+let contacts = loadData();
+let criteria = loadCriteria();
+let editingId = null;
+
+// Auto-detect server and sync on load
+detectServer().then(() => syncFromServer());
+
+// ==================== NAVIGATION ====================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event && event.currentTarget && event.currentTarget.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(page)) n.classList.add('active');
+  });
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'tracker') renderTracker();
+  if (page === 'followups') renderFollowups('overdue');
+  if (page === 'templates') renderTemplates();
+  if (page === 'criteria') renderCriteria();
+}
+
+// ==================== STATUS HELPERS ====================
+const STATUS_MAP = {
+  not_contacted:      { label: 'Not Contacted',      cls: 'badge-gray' },
+  email_sent:         { label: 'Email Sent',          cls: 'badge-blue' },
+  responded:          { label: 'Responded',           cls: 'badge-yellow' },
+  interview_scheduled:{ label: 'Interview Sched.',    cls: 'badge-purple' },
+  submitted:          { label: 'Submitted',           cls: 'badge-orange' },
+  offer:              { label: 'Offer Received',      cls: 'badge-green' },
+  rejected:           { label: 'Rejected',            cls: 'badge-red' },
+  withdrawn:          { label: 'Withdrawn',           cls: 'badge-gray' },
+};
+const LOC_MAP = { remote: { label: '🌐 Remote', cls: 'badge-green' }, hybrid: { label: '🏢 Hybrid', cls: 'badge-blue' }, onsite: { label: '📍 Onsite', cls: 'badge-gray' } };
+
+function statusBadge(s) { const m = STATUS_MAP[s] || { label: s, cls: 'badge-gray' }; return `<span class="badge ${m.cls}">${m.label}</span>`; }
+function locBadge(l) { const m = LOC_MAP[l] || { label: l, cls: 'badge-gray' }; return `<span class="badge ${m.cls}">${m.label}</span>`; }
+
+function daysDiff(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  return Math.round((d - today) / 86400000);
+}
+function followupBadge(dateStr) {
+  if (!dateStr) return '<span style="color:var(--muted);font-size:12px;">—</span>';
+  const diff = daysDiff(dateStr);
+  const fmt = new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diff < 0) return `<span class="badge badge-red">⚠️ ${Math.abs(diff)}d overdue</span>`;
+  if (diff === 0) return `<span class="badge badge-orange">Today</span>`;
+  if (diff <= 3) return `<span class="badge badge-yellow">${fmt}</span>`;
+  return `<span style="font-size:12px;color:var(--muted);">${fmt}</span>`;
+}
+
+function detectDoubleSubmit(contact) {
+  if (!contact.company) return false;
+  const submitted = contacts.filter(c => c.id !== contact.id && c.company.toLowerCase() === contact.company.toLowerCase() && (c.status === 'submitted' || c.submittedby));
+  return submitted.length > 0;
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in7 = new Date(today); in7.setDate(in7.getDate() + 7);
+
+  const total = contacts.length;
+  const awaiting = contacts.filter(c => c.status === 'email_sent').length;
+  const responses = contacts.filter(c => c.status === 'responded').length;
+  const interviews = contacts.filter(c => c.status === 'interview_scheduled' || c.status === 'offer').length;
+  const overdue = contacts.filter(c => c.followup && daysDiff(c.followup) < 0 && !['rejected','withdrawn','offer'].includes(c.status)).length;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-awaiting').textContent = awaiting;
+  document.getElementById('stat-responses').textContent = responses;
+  document.getElementById('stat-interviews').textContent = interviews;
+  document.getElementById('stat-overdue').textContent = overdue;
+
+  const pipeline = document.getElementById('pipeline-stages');
+  const stages = Object.entries(STATUS_MAP);
+  pipeline.innerHTML = stages.map(([key, val]) => {
+    const count = contacts.filter(c => c.status === key).length;
+    return `<div class="pipeline-stage"><div class="pipeline-num">${count}</div><div class="pipeline-label">${val.label}</div></div>`;
+  }).join('');
+
+  const upcoming = contacts
+    .filter(c => c.followup && !['rejected','withdrawn','offer'].includes(c.status))
+    .filter(c => { const d = daysDiff(c.followup); return d !== null && d >= 0 && d <= 7; })
+    .sort((a,b) => new Date(a.followup) - new Date(b.followup))
+    .slice(0, 6);
+
+  const tbody = document.getElementById('dash-followups');
+  if (upcoming.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">No follow-ups due this week 🎉</td></tr>`;
+  } else {
+    tbody.innerHTML = upcoming.map(c => `<tr>
+      <td><strong>${c.company}</strong></td>
+      <td>${c.contact || '—'}</td>
+      <td>${c.jobtitle || '—'}</td>
+      <td>${followupBadge(c.followup)}</td>
+      <td>${statusBadge(c.status)}</td>
+    </tr>`).join('');
+  }
+
+  const date = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('dash-subtitle').textContent = `Week of ${date} • ${total} contacts tracked`;
+}
+
+// ==================== TRACKER ====================
+function renderTracker() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const statusF = document.getElementById('filter-status').value;
+  const locF = document.getElementById('filter-location').value;
+
+  let filtered = contacts.filter(c => {
+    const matchSearch = !search || [c.company,c.contact,c.jobtitle,c.notes].some(v => v && v.toLowerCase().includes(search));
+    const matchStatus = !statusF || c.status === statusF;
+    const matchLoc = !locF || c.location === locF;
+    return matchSearch && matchStatus && matchLoc;
+  });
+
+  const tbody = document.getElementById('tracker-tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No contacts found</div><div>Add your first recruiter or company to get started</div></td></tr>`;
+  } else {
+    tbody.innerHTML = filtered.map((c, i) => {
+      const dbl = detectDoubleSubmit(c);
+      return `<tr class="${dbl ? 'warn-row' : ''}">
+        <td style="color:var(--muted);font-size:12px;">${i+1}</td>
+        <td><strong>${c.company}</strong>${c.joburl ? ` <a href="${c.joburl}" target="_blank" style="color:var(--accent);font-size:11px;">↗</a>` : ''}</td>
+        <td>${c.contact || '—'}<br><span style="font-size:11px;color:var(--muted);">${c.email || ''}</span></td>
+        <td>${c.jobtitle || '—'}</td>
+        <td>${c.location ? locBadge(c.location) : '—'}</td>
+        <td>${statusBadge(c.status)}</td>
+        <td>${followupBadge(c.followup)}</td>
+        <td>${dbl ? '<span class="warn-icon" title="Possible double submission risk!">⚠️</span>' : (c.confirmed === 'true' ? '<span title="Recruiter confirmed company">✅</span>' : '<span title="Not yet confirmed" style="color:var(--muted)">—</span>')}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn-icon" onclick="editContact('${c.id}')" title="Edit">✏️</button>
+          <button class="btn-icon" onclick="deleteContact('${c.id}')" title="Delete" style="margin-left:4px;">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('tracker-count').textContent = `Showing ${filtered.length} of ${contacts.length} contacts`;
+}
+
+// ==================== MODAL ====================
+function openModal(prefill) {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Add New Contact';
+  ['company','contact','email','linkedin','jobtitle','joburl','salary','notes','submittedby'].forEach(f => document.getElementById('f-'+f).value = prefill && prefill[f] ? prefill[f] : '');
+  document.getElementById('f-location').value = 'remote';
+  document.getElementById('f-status').value = 'not_contacted';
+  document.getElementById('f-confirmed').value = 'false';
+  document.getElementById('f-followup').value = (() => { const d = new Date(); d.setDate(d.getDate()+7); return d.toISOString().split('T')[0]; })();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function editContact(id) {
+  const c = contacts.find(x => x.id === id);
+  if (!c) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit Contact';
+  document.getElementById('f-company').value = c.company || '';
+  document.getElementById('f-contact').value = c.contact || '';
+  document.getElementById('f-email').value = c.email || '';
+  document.getElementById('f-linkedin').value = c.linkedin || '';
+  document.getElementById('f-jobtitle').value = c.jobtitle || '';
+  document.getElementById('f-joburl').value = c.joburl || '';
+  document.getElementById('f-location').value = c.location || 'remote';
+  document.getElementById('f-salary').value = c.salary || '';
+  document.getElementById('f-status').value = c.status || 'not_contacted';
+  document.getElementById('f-followup').value = c.followup || '';
+  document.getElementById('f-confirmed').value = c.confirmed || 'false';
+  document.getElementById('f-submittedby').value = c.submittedby || '';
+  document.getElementById('f-notes').value = c.notes || '';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function saveContact() {
+  const company = document.getElementById('f-company').value.trim();
+  if (!company) { alert('Company name is required.'); return; }
+  const record = {
+    id: editingId || Date.now().toString(),
+    company, contact: document.getElementById('f-contact').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    linkedin: document.getElementById('f-linkedin').value.trim(),
+    jobtitle: document.getElementById('f-jobtitle').value.trim(),
+    joburl: document.getElementById('f-joburl').value.trim(),
+    location: document.getElementById('f-location').value,
+    salary: document.getElementById('f-salary').value.trim(),
+    status: document.getElementById('f-status').value,
+    followup: document.getElementById('f-followup').value,
+    confirmed: document.getElementById('f-confirmed').value,
+    submittedby: document.getElementById('f-submittedby').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    dateAdded: editingId ? (contacts.find(c=>c.id===editingId)||{}).dateAdded : new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+  };
+  if (editingId) {
+    contacts = contacts.map(c => c.id === editingId ? record : c);
+  } else {
+    contacts.push(record);
+  }
+  saveData(contacts);
+  closeModal();
+  renderTracker();
+  renderDashboard();
+  populateContactPicker();
+}
+function deleteContact(id) {
+  if (!confirm('Delete this contact?')) return;
+  contacts = contacts.filter(c => c.id !== id);
+  saveData(contacts);
+  renderTracker();
+  renderDashboard();
+}
+
+// ==================== FOLLOW-UPS ====================
+let currentFollowupTab = 'overdue';
+function switchFollowupTab(tab, el) {
+  currentFollowupTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderFollowups(tab);
+}
+function renderFollowups(tab) {
+  const active = contacts.filter(c => !['rejected','withdrawn','offer'].includes(c.status));
+  let items;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in7 = new Date(today); in7.setDate(in7.getDate()+7);
+
+  if (tab === 'overdue') items = active.filter(c => c.followup && daysDiff(c.followup) < 0);
+  else if (tab === 'today') items = active.filter(c => c.followup && daysDiff(c.followup) === 0);
+  else if (tab === 'week') items = active.filter(c => c.followup && daysDiff(c.followup) > 0 && daysDiff(c.followup) <= 7);
+  else items = active.filter(c => c.followup);
+
+  items.sort((a,b) => new Date(a.followup) - new Date(b.followup));
+
+  const container = document.getElementById('followup-list');
+  if (items.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">${tab==='overdue'?'✅':'📅'}</div><div class="empty-title">${tab==='overdue'?'No overdue follow-ups!':'Nothing here'}</div></div>`;
+    return;
+  }
+  container.innerHTML = items.map(c => {
+    const diff = daysDiff(c.followup);
+    const dotClass = diff < 0 ? 'red' : diff === 0 ? 'orange' : 'yellow';
+    const dateLabel = diff < 0 ? `${Math.abs(diff)} day${Math.abs(diff)>1?'s':''} overdue` : diff === 0 ? 'Due today' : `Due in ${diff} day${diff>1?'s':''}`;
+    return `<div class="alert-item">
+      <div class="alert-dot ${dotClass}"></div>
+      <div class="alert-content">
+        <div class="alert-title">${c.company}${c.jobtitle ? ` — ${c.jobtitle}` : ''}</div>
+        <div class="alert-sub">${c.contact || 'No contact name'} • ${dateLabel} • ${STATUS_MAP[c.status]?.label || c.status}</div>
+        ${c.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;">${c.notes.substring(0,100)}${c.notes.length>100?'...':''}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button class="btn btn-secondary btn-sm" onclick="editContact('${c.id}')">Update</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ==================== TEMPLATES ====================
+const TEMPLATES = [
+  {
+    title: '📨 Initial Recruiter Outreach',
+    body: `Subject: Exploring [Job Title] Opportunities — Remote, US-Based
+
+Hi [Recruiter Name],
+
+I came across your profile and wanted to reach out regarding [Job Title] opportunities. I'm a results-driven professional with experience in [your key skills/experience], actively exploring remote roles.
+
+A few quick things about what I'm looking for:
+• Work type: Remote preferred (US-based)
+• Salary: $80K+ base (open to discuss based on full package)
+• Location: Can work from anywhere in the United States
+
+Before moving forward with any application, I'd ask that you confirm the company name and job location, and let me know if you plan to submit my resume — just to avoid any double-submission issues on your end.
+
+Would love to connect if there's a potential fit. I can send a tailored resume once we've had a quick chat.
+
+Best,
+Montrez Cox
+[Phone] | [LinkedIn]`
+  },
+  {
+    title: '📬 Follow-Up (No Response — 7 Days)',
+    body: `Subject: Following Up — [Job Title] Interest
+
+Hi [Recruiter Name],
+
+Just circling back on my note from last week regarding [Job Title] opportunities.
+
+I'm still very much interested and wanted to make sure this didn't get buried. If the roles are still open, I'd love to connect for a quick 10-minute call.
+
+If nothing is available right now, no worries — I'm happy to stay in touch for future openings.
+
+Thanks for your time,
+Montrez Cox`
+  },
+  {
+    title: '📋 Criteria Statement to Recruiter',
+    body: `Subject: My Job Search Criteria — Quick Reference
+
+Hi [Recruiter Name],
+
+Before we go further, I wanted to share my core criteria so we can save each other time:
+
+✅ Work Type: Remote only (must be able to work from the US)
+✅ Salary: $80K+ base minimum
+✅ Role Type: [Preferred roles, e.g. Sales Engineer / Solutions Architect / Pre-Sales]
+✅ Company Size: Prefer smaller/growing companies
+✅ Location: Open to any US state for remote roles
+
+Important: Please confirm the company name and job location before submitting my resume to any role. I'm working with a few recruiters and want to avoid double submissions, which can disqualify candidates.
+
+If a role matches these criteria, I'm very interested and will respond quickly.
+
+Thanks,
+Montrez Cox`
+  },
+  {
+    title: '🛡️ Anti-Double Submit Confirmation Request',
+    body: `Subject: Quick Confirmation Before You Submit
+
+Hi [Recruiter Name],
+
+Before you submit my resume, could you please confirm:
+
+1. Company name: _______________
+2. Job location/state: _______________
+3. Job title + req ID (if available): _______________
+4. Has another recruiter already submitted me to this company? _______________
+
+This is just standard practice for me to prevent double-submission issues. Once confirmed, I'll give you the green light and we can move quickly.
+
+Thanks!
+Montrez`
+  },
+  {
+    title: '📅 Interview Thank You / Next Steps',
+    body: `Subject: Thank You — [Job Title] Interview
+
+Hi [Interviewer Name],
+
+Thank you for taking the time to speak with me today about the [Job Title] role at [Company]. I really enjoyed learning more about [something specific they discussed].
+
+I'm genuinely excited about the opportunity, especially [specific aspect that resonated]. I believe my background in [relevant skill/experience] would allow me to contribute meaningfully to [their goal/problem discussed].
+
+Please don't hesitate to reach out if you need any additional information. I look forward to hearing about next steps.
+
+Best,
+Montrez Cox
+[Phone] | [LinkedIn]`
+  },
+];
+
+function renderTemplates() {
+  document.getElementById('templates-container').innerHTML = TEMPLATES.map((t, i) => `
+    <div class="template-card">
+      <div class="template-header">
+        <h3>${t.title}</h3>
+        <button class="copy-btn" id="copy-btn-${i}" onclick="copyTemplate(${i})">Copy</button>
+      </div>
+      <div class="template-body">${t.body}</div>
+    </div>
+  `).join('');
+}
+
+function copyTemplate(i) {
+  navigator.clipboard.writeText(TEMPLATES[i].body).then(() => {
+    const btn = document.getElementById('copy-btn-' + i);
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ==================== CRITERIA ====================
+function renderCriteria() {
+  criteria = loadCriteria();
+  const rows = [
+    { key: 'Work Type', val: criteria.worktype },
+    { key: 'Minimum Salary', val: criteria.minsalary },
+    { key: 'Preferred Roles', val: criteria.roles },
+    { key: 'Geography', val: criteria.geo },
+    { key: 'Company Size', val: criteria.size },
+    { key: 'Target # of Applications', val: criteria.target },
+    { key: 'Must-Haves', val: criteria.musthaves },
+    { key: 'Nice-to-Haves', val: criteria.nicetohaves },
+  ];
+  document.getElementById('criteria-rows').innerHTML = rows.map(r => `
+    <div class="criteria-row">
+      <span class="criteria-key">${r.key}</span>
+      <span class="criteria-val">${r.val || '—'}</span>
+    </div>`).join('');
+}
+function openCriteriaModal() {
+  criteria = loadCriteria();
+  document.getElementById('c-worktype').value = criteria.worktype || 'Remote Only';
+  document.getElementById('c-minsalary').value = criteria.minsalary || '';
+  document.getElementById('c-roles').value = criteria.roles || '';
+  document.getElementById('c-geo').value = criteria.geo || '';
+  document.getElementById('c-size').value = criteria.size || 'Small (1–100)';
+  document.getElementById('c-target').value = criteria.target || '100';
+  document.getElementById('c-musthaves').value = criteria.musthaves || '';
+  document.getElementById('c-nicetohaves').value = criteria.nicetohaves || '';
+  document.getElementById('criteria-modal').classList.add('open');
+}
+function closeCriteriaModal() { document.getElementById('criteria-modal').classList.remove('open'); }
+function saveCriteria() {
+  criteria = {
+    worktype: document.getElementById('c-worktype').value,
+    minsalary: document.getElementById('c-minsalary').value,
+    roles: document.getElementById('c-roles').value,
+    geo: document.getElementById('c-geo').value,
+    size: document.getElementById('c-size').value,
+    target: document.getElementById('c-target').value,
+    musthaves: document.getElementById('c-musthaves').value,
+    nicetohaves: document.getElementById('c-nicetohaves').value,
+  };
+  saveCriteriaData(criteria);
+  closeCriteriaModal();
+  renderCriteria();
+}
+
+// ==================== AI TOOLS (GEMINI) ====================
+const GEMINI_KEY_STORAGE = 'jsc_gemini_key';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+function getGeminiKey() {
+  // Try stored key first, then fall back to hardcoded (user can override)
+  return localStorage.getItem(GEMINI_KEY_STORAGE) || 'AIzaSyANeS5YgEcNBjeRyq5z_hhTNPFrdqM3Oxo';
+}
+
+async function callGemini(prompt, systemCtx = '') {
+  const key = getGeminiKey();
+  if (!key) return null;
+
+  const contents = [];
+  if (systemCtx) {
+    contents.push({ role: 'user', parts: [{ text: `[System]: ${systemCtx}` }] });
+    contents.push({ role: 'model', parts: [{ text: 'Understood.' }] });
+  }
+  contents.push({ role: 'user', parts: [{ text: prompt }] });
+
+  const resp = await fetch(`${GEMINI_URL}?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents, generationConfig: { temperature: 0.7, maxOutputTokens: 2048 } }),
+  });
+  if (!resp.ok) throw new Error(`Gemini API error: ${resp.status} ${await resp.text()}`);
+  const data = await resp.json();
+  return data.candidates[0].content.parts[0].text;
+}
+
+function setAILoading(btnId, outputId, loading) {
+  const btn = document.getElementById(btnId);
+  const out = document.getElementById(outputId);
+  if (loading) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating...';
+    out.innerHTML = '<span style="color:var(--muted);">✨ Calling Gemini... this takes about 5-10 seconds...</span>';
+  } else {
+    btn.disabled = false;
+  }
+}
+
+async function runResumeTailor() {
+  const jobDesc = document.getElementById('rt-jobdesc').value.trim();
+  const background = document.getElementById('rt-background').value.trim();
+  const numBullets = document.getElementById('rt-bullets').value;
+
+  if (!jobDesc) { alert('Please paste a job description.'); return; }
+  if (!background) { alert('Please add a brief background summary.'); return; }
+
+  setAILoading('rt-btn', 'rt-output', true);
+  document.getElementById('rt-copy-btn').style.display = 'none';
+
+  const crit = loadCriteria();
+  const system = `You are an expert resume coach for tech sales and solutions engineering roles.
+The candidate's job criteria: work type = ${crit.worktype}, min salary = ${crit.minsalary}, roles = ${crit.roles}.
+Write powerful, concise resume bullets: [Action Verb] + [what you did] + [quantified result]. Never use 'responsible for'.`;
+
+  const prompt = `Job Description:\n---\n${jobDesc}\n---\n\nCandidate Background:\n---\n${background}\n---\n\nProvide:\n1. **${numBullets} Tailored Resume Bullets** — ATS-optimized for this job\n2. **Top 8 Keywords** — exact phrases from the posting to weave in\n3. **Match Score** — 0-100% with 2-sentence explanation\n4. **1 Key Gap** — biggest mismatch and how to frame it`;
+
+  try {
+    const result = await callGemini(prompt, system);
+    document.getElementById('rt-output').textContent = result;
+    document.getElementById('rt-copy-btn').style.display = 'inline-block';
+    document.getElementById('rt-btn').textContent = '✨ Tailor Resume';
+    document.getElementById('rt-btn').disabled = false;
+  } catch(e) {
+    document.getElementById('rt-output').innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+    document.getElementById('rt-btn').textContent = '✨ Tailor Resume';
+    document.getElementById('rt-btn').disabled = false;
+  }
+}
+
+function populateContactPicker() {
+  const sel = document.getElementById('ae-contact-picker');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select a tracked contact —</option>';
+  contacts.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = `${c.company}${c.contact ? ' — ' + c.contact : ''}${c.jobtitle ? ' ('+c.jobtitle+')' : ''}`;
+    sel.appendChild(opt);
+  });
+}
+
+function fillFromContact() {
+  const id = document.getElementById('ae-contact-picker').value;
+  if (!id) return;
+  const c = contacts.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('ae-company').value = c.company || '';
+  document.getElementById('ae-recruiter').value = c.contact || '';
+  document.getElementById('ae-jobtitle').value = c.jobtitle || '';
+}
+
+async function runEmailDraft() {
+  const template  = document.getElementById('ae-template').value;
+  const company   = document.getElementById('ae-company').value.trim() || '[Company]';
+  const recruiter = document.getElementById('ae-recruiter').value.trim() || '[Recruiter Name]';
+  const jobtitle  = document.getElementById('ae-jobtitle').value.trim() || '[Job Title]';
+  const context   = document.getElementById('ae-context').value.trim();
+
+  setAILoading('ae-btn', 'ae-output', true);
+  document.getElementById('ae-copy-btn').style.display = 'none';
+
+  const crit = loadCriteria();
+  const system = `You are writing job search emails for Montrez Cox (montrez.cox@gmail.com).
+His criteria: work type = ${crit.worktype}, min salary = ${crit.minsalary}, roles = ${crit.roles}.
+Write confident, professional, personable emails. Always start with "Subject:" on the first line.`;
+
+  const templateInstructions = {
+    initial_outreach: `Write a concise first outreach email to recruiter '${recruiter}' at ${company} about a ${jobtitle} role. Under 150 word body. Mention remote preference and salary floor. End with clear CTA.`,
+    follow_up: `Write a brief, non-pushy follow-up email to '${recruiter}' at ${company} about the ${jobtitle} role. No response in 7+ days. Under 100 words. Warm but direct.`,
+    criteria_statement: `Write an email to '${recruiter}' at ${company} stating job criteria upfront: remote only, min ${crit.minsalary}, roles: ${crit.roles}, US-based. Include anti-double-submit ask.`,
+    anti_double_submit: `Write a short email to '${recruiter}' requesting they confirm the company name, state, and that no other recruiter submitted me before proceeding. Frame it as standard practice.`,
+    interview_thank_you: `Write a warm post-interview thank you to '${recruiter}' at ${company} for the ${jobtitle} discussion. Sincere, specific, under 200 words.`,
+  };
+
+  const prompt = `${templateInstructions[template] || templateInstructions.initial_outreach}
+${context ? `\nExtra context: ${context}` : ''}
+
+Write the full email including subject line. Use [brackets] for any placeholder info needed.`;
+
+  try {
+    const result = await callGemini(prompt, system);
+    document.getElementById('ae-output').textContent = result;
+    document.getElementById('ae-copy-btn').style.display = 'inline-block';
+    document.getElementById('ae-btn').textContent = '⚡ Generate Email';
+    document.getElementById('ae-btn').disabled = false;
+  } catch(e) {
+    document.getElementById('ae-output').innerHTML = `<span style="color:var(--red);">Error: ${e.message}. Check that your Gemini API key is valid.</span>`;
+    document.getElementById('ae-btn').textContent = '⚡ Generate Email';
+    document.getElementById('ae-btn').disabled = false;
+  }
+}
+
+function copyAIOutput(outputId, btnId) {
+  const text = document.getElementById(outputId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(btnId);
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ==================== EXPORT / IMPORT (sync with MCP server contacts.json) ====================
+function exportContacts() {
+  const data = JSON.stringify(contacts, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'contacts.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importContacts(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) { alert('Invalid format — expected a JSON array.'); return; }
+      const existing = new Set(contacts.map(c => c.id));
+      let added = 0;
+      imported.forEach(c => { if (!existing.has(c.id)) { contacts.push(c); added++; } });
+      saveData(contacts);
+      renderDashboard(); renderTracker(); populateContactPicker();
+      alert(`✅ Import complete — ${added} new contacts added, ${imported.length - added} duplicates skipped.`);
+    } catch { alert('Failed to parse JSON. Make sure you\'re importing a valid contacts.json file.'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ==================== INIT ====================
+renderDashboard();
+renderTemplates();
+renderCriteria();
+populateContactPicker();
+</script>
+</body>
+</html>

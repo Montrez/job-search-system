@@ -1,0 +1,27 @@
+services:
+  dashboard:
+    build: .
+    container_name: job-search-dashboard
+    ports:
+      - "8765:8765"
+    volumes:
+      # Persists contacts.json and criteria.json across restarts
+      - ./data:/app/data
+      # Keeps the Excel file editable on your host machine
+      - ./Job_Search_Tracker_Montrez.xlsx:/app/Job_Search_Tracker_Montrez.xlsx
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  seeder:
+    build: .
+    container_name: job-search-seeder
+    volumes:
+      - ./data:/app/data
+      - ./Job_Search_Tracker_Montrez.xlsx:/app/Job_Search_Tracker_Montrez.xlsx
+    env_file:
+      - .env
+    command: python3 seed_jobs.py
+    # One-shot: run with `docker compose run seeder`
+    profiles:
+      - seed
