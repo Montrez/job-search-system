@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
 seed_jobs.py — Populate contacts.json + Excel with AI-generated job leads.
-Uses Gemini to generate realistic leads matching your saved criteria.
+Provider priority: Groq (free, fast) → Gemini → built-in fallback leads.
+
+Get a free Groq key at: https://console.groq.com
+Add to .env:  GROQ_API_KEY=gsk_...
 """
 import json
 import os
@@ -27,6 +30,8 @@ DATA_FILE     = BASE_DIR / "data" / "contacts.json"
 CRITERIA_FILE = BASE_DIR / "data" / "criteria.json"
 EXCEL_FILE    = BASE_DIR / "Job_Search_Tracker_Montrez.xlsx"
 GEMINI_URL    = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GROQ_URL      = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL    = "llama-3.3-70b-versatile"
 
 DEFAULT_CRITERIA = {
     "worktype": "Remote Only",
@@ -40,13 +45,39 @@ DEFAULT_CRITERIA = {
 }
 
 
-def get_api_key() -> str:
+def get_env_key(name: str) -> str:
+    val = os.getenv(name, "")
+    if val:
+        return val
     env_path = BASE_DIR / ".env"
     if env_path.exists():
         for line in env_path.read_text().splitlines():
-            if line.startswith("GEMINI_API_KEY="):
+            if line.startswith(f"{name}="):
                 return line.split("=", 1)[1].strip()
-    return os.getenv("GEMINI_API_KEY", "")
+    return ""
+
+
+def call_groq(prompt: str, key: str) -> str:
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.8,
+        "max_tokens": 4096,
+    }
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        GROQ_URL,
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {key}",
+            "User-Agent": "Mozilla/5.0 (compatible; job-search-bot/1.0)",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    return data["choices"][0]["message"]["content"]
 
 
 def load_criteria() -> dict:
@@ -104,11 +135,12 @@ FALLBACK_LEADS = [
 ]
 
 
-def generate_job_leads(criteria: dict, key: str, count: int = 25) -> list:
+def _build_prompt(criteria: dict, count: int) -> str:
     today = date.today().isoformat()
-    prompt = f"""You are a job search data generator. Generate {count} realistic job leads for a candidate
-with these search criteria:
-- Roles: {criteria.get('roles')}
+    roles = criteria.get('roles', 'Sales Engineer, Solutions Architect')
+    role_list = ", ".join(f'"{r.strip()}"' for r in roles.split(","))
+    return f"""You are a job search data generator. Generate {count} realistic job leads for a candidate with these search criteria:
+- Roles: {roles}
 - Work Type: {criteria.get('worktype')}
 - Min Salary: {criteria.get('minsalary')}
 - Geography: {criteria.get('geo')}
@@ -121,7 +153,7 @@ Generate {count} distinct job leads as a JSON array. Each entry must have these 
   "contact": "First Last (recruiter or hiring manager name)",
   "email": "firstname.lastname@company.com (realistic)",
   "linkedin": "https://linkedin.com/in/firstname-lastname-abc123",
-  "jobtitle": "One of: Sales Engineer, Solutions Architect, Pre-Sales Engineer, Technical Sales Consultant, Solutions Engineer, Customer Success Engineer",
+  "jobtitle": "One of: {role_list}",
   "joburl": "https://company.com/careers/job-id or https://linkedin.com/jobs/view/123456789",
   "location": "remote",
   "salary": "$XX,000 - $XX,000 (realistic range above $80k, up to $150k)",
@@ -129,23 +161,29 @@ Generate {count} distinct job leads as a JSON array. Each entry must have these 
   "notes": "1-2 sentence note about why this role is interesting or what to mention in outreach"
 }}
 
-Use real-sounding but fictional companies in these sectors: SaaS, DevTools, Fintech, Cybersecurity, Data/Analytics, Cloud Infrastructure, HR Tech, Sales Tech.
-Vary the seniority (some mid-level $85k-$110k, some senior $110k-$145k).
-Today's date is {today}.
-
+Use real-sounding but fictional companies in: SaaS, DevTools, Fintech, Cybersecurity, Data/Analytics, Cloud Infrastructure, HR Tech, Sales Tech.
+Vary seniority (mid-level $85k-$110k, senior $110k-$145k). Today: {today}.
 Return ONLY the JSON array, no markdown fences, no extra text."""
 
-    print("  Calling Gemini to generate job leads...")
-    raw = call_gemini(prompt, key)
 
+def _parse_leads(raw: str) -> list:
     raw = raw.strip()
     if raw.startswith("```"):
         raw = raw.split("\n", 1)[1]
         raw = raw.rsplit("```", 1)[0]
-
     leads = json.loads(raw.strip())
-    print(f"  Generated {len(leads)} leads from Gemini.")
+    print(f"  Generated {len(leads)} leads.")
     return leads
+
+
+def generate_job_leads_groq(criteria: dict, key: str, count: int = 25) -> list:
+    print(f"  Calling Groq ({GROQ_MODEL})...")
+    return _parse_leads(call_groq(_build_prompt(criteria, count), key))
+
+
+def generate_job_leads(criteria: dict, key: str, count: int = 25) -> list:
+    print("  Calling Gemini (gemini-2.0-flash)...")
+    return _parse_leads(call_gemini(_build_prompt(criteria, count), key))
 
 
 def build_contacts(leads: list) -> list:
@@ -285,31 +323,39 @@ def main():
     print("\n🔍 Job Search Seeder — Montrez Cox")
     print("=" * 45)
 
-    key = get_api_key()
-    if not key:
-        print("ERROR: GEMINI_API_KEY not found in .env")
-        sys.exit(1)
-
     criteria = load_criteria()
-    print(f"  Criteria: {criteria.get('roles')} | {criteria.get('worktype')} | min {criteria.get('minsalary')}")
+    print(f"  Roles:    {criteria.get('roles')}")
+    print(f"  Criteria: {criteria.get('worktype')} | min {criteria.get('minsalary')}")
 
-    # Generate leads — try Gemini first, fall back to built-in leads
+    groq_key   = get_env_key("GROQ_API_KEY")
+    gemini_key = get_env_key("GEMINI_API_KEY")
+
     leads = None
-    if key:
+
+    # 1. Try Groq (free, fast, generous quota)
+    if groq_key:
         try:
-            leads = generate_job_leads(criteria, key, count=25)
+            leads = generate_job_leads_groq(criteria, groq_key, count=25)
+        except Exception as e:
+            print(f"  ⚠️  Groq error: {e} — trying Gemini...")
+
+    # 2. Try Gemini
+    if leads is None and gemini_key:
+        try:
+            leads = generate_job_leads(criteria, gemini_key, count=25)
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", errors="replace")
             if "429" in str(e.code) or "quota" in detail.lower():
-                print(f"  ⚠️  Gemini quota exceeded — using built-in job leads instead.")
+                print("  ⚠️  Gemini quota exceeded.")
             else:
-                print(f"  ⚠️  Gemini error ({e.code}) — using built-in job leads instead.")
+                print(f"  ⚠️  Gemini error ({e.code}).")
         except Exception as e:
-            print(f"  ⚠️  Gemini unavailable ({e}) — using built-in job leads instead.")
+            print(f"  ⚠️  Gemini unavailable: {e}")
 
+    # 3. Built-in fallback
     if leads is None:
+        print("  Using built-in job leads (add GROQ_API_KEY to .env for AI-generated leads).")
         leads = FALLBACK_LEADS
-        print(f"  Using {len(leads)} built-in job leads matching your criteria.")
 
     # Build contact records
     contacts = build_contacts(leads)

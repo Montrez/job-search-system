@@ -6,6 +6,8 @@ Access: http://localhost:8765
 """
 import json
 import os
+import subprocess
+import sys
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
@@ -29,6 +31,24 @@ def load_json(path: Path, default):
 def save_json(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, default=str))
+
+
+def _sync_excel(contacts: list) -> None:
+    """Fire-and-forget Excel sync — runs seed_jobs update_excel in a subprocess."""
+    try:
+        script = BASE_DIR / "seed_jobs.py"
+        if script.exists():
+            subprocess.Popen(
+                [sys.executable, "-c",
+                 f"import sys; sys.path.insert(0,'{BASE_DIR}'); "
+                 f"from seed_jobs import update_excel, load_json; "
+                 f"from pathlib import Path; "
+                 f"update_excel({json.dumps(contacts)})"],
+                cwd=str(BASE_DIR),
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+    except Exception:
+        pass
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
@@ -78,17 +98,31 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 self._error(400, "Expected a JSON array")
                 return
             save_json(DATA_FILE, data)
+            _sync_excel(data)
             self._json_response({"ok": True, "count": len(data)})
 
         elif path == "/api/contacts/add":
             contacts = load_json(DATA_FILE, [])
             contacts.append(data)
             save_json(DATA_FILE, contacts)
+            _sync_excel(contacts)
             self._json_response({"ok": True, "id": data.get("id")})
 
         elif path == "/api/criteria":
             save_json(CRITERIA_FILE, data)
             self._json_response({"ok": True})
+
+        elif path == "/api/reseed":
+            try:
+                result = subprocess.run(
+                    [sys.executable, str(BASE_DIR / "seed_jobs.py")],
+                    capture_output=True, text=True, timeout=120, cwd=str(BASE_DIR)
+                )
+                output = result.stdout + result.stderr
+                contacts = load_json(DATA_FILE, [])
+                self._json_response({"ok": result.returncode == 0, "count": len(contacts), "output": output})
+            except Exception as e:
+                self._json_response({"ok": False, "output": str(e)})
 
         else:
             self._error(404, "Not found")

@@ -226,6 +226,7 @@
       <button onclick="exportContacts()" style="flex:1;background:rgba(52,201,141,0.15);border:1px solid rgba(52,201,141,0.3);color:#34c98d;border-radius:5px;padding:5px 4px;font-size:10px;cursor:pointer;font-weight:600;">⬇ Export</button>
       <label style="flex:1;background:rgba(79,142,247,0.15);border:1px solid rgba(79,142,247,0.3);color:#4f8ef7;border-radius:5px;padding:5px 4px;font-size:10px;cursor:pointer;font-weight:600;text-align:center;">⬆ Import<input type="file" accept=".json" onchange="importContacts(event)" style="display:none;"></label>
     </div>
+    <button id="reseed-btn" onclick="reseedJobs()" style="width:100%;margin-top:8px;background:rgba(124,92,191,0.2);border:1px solid rgba(124,92,191,0.4);color:#7c5cbf;border-radius:5px;padding:6px 4px;font-size:10px;cursor:pointer;font-weight:600;">🔍 Re-seed Jobs</button>
   </div>
 </nav>
 
@@ -689,6 +690,31 @@ let editingId = null;
 
 // Auto-detect server and sync on load
 detectServer().then(() => syncFromServer());
+
+async function reseedJobs() {
+  if (!serverOnline) {
+    alert('Sync server is offline. Run: docker compose up -d');
+    return;
+  }
+  const btn = document.getElementById('reseed-btn');
+  btn.textContent = '⏳ Searching...';
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API_BASE}/api/reseed`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const data = await r.json();
+    if (data.ok) {
+      await syncFromServer();
+      btn.textContent = `✅ ${data.count} leads loaded`;
+      setTimeout(() => { btn.textContent = '🔍 Re-seed Jobs'; btn.disabled = false; }, 3000);
+    } else {
+      btn.textContent = '❌ Failed — check logs';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    btn.textContent = '❌ Error';
+    btn.disabled = false;
+  }
+}
 
 // ==================== NAVIGATION ====================
 function showPage(page) {
