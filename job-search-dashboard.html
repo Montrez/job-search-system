@@ -1134,26 +1134,29 @@ function saveCriteria() {
   renderCriteria();
 }
 
-// ==================== AI TOOLS (GEMINI) ====================
-const GEMINI_KEY_STORAGE = 'jsc_gemini_key';
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
-function getGeminiKey() {
-  // Try stored key first, then fall back to hardcoded (user can override)
-  return localStorage.getItem(GEMINI_KEY_STORAGE) || 'AIzaSyANeS5YgEcNBjeRyq5z_hhTNPFrdqM3Oxo';
-}
-
+// ==================== AI TOOLS ====================
 async function callGemini(prompt, systemCtx = '') {
-  const key = getGeminiKey();
-  if (!key) return null;
+  // Route through local server proxy (uses Groq → Gemini fallback, no quota issues)
+  if (serverOnline) {
+    const resp = await fetch(`${API_BASE}/api/ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, system: systemCtx }),
+    });
+    if (!resp.ok) throw new Error(`AI error: ${resp.status} ${await resp.text()}`);
+    const data = await resp.json();
+    return data.text;
+  }
 
+  // Fallback: call Gemini directly if server is offline
+  const key = 'AIzaSyANeS5YgEcNBjeRyq5z_hhTNPFrdqM3Oxo';
+  const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
   const contents = [];
   if (systemCtx) {
     contents.push({ role: 'user', parts: [{ text: `[System]: ${systemCtx}` }] });
     contents.push({ role: 'model', parts: [{ text: 'Understood.' }] });
   }
   contents.push({ role: 'user', parts: [{ text: prompt }] });
-
   const resp = await fetch(`${GEMINI_URL}?key=${key}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

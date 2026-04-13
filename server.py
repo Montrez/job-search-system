@@ -8,9 +8,15 @@ import json
 import os
 import subprocess
 import sys
+import urllib.request
+import urllib.error
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
+
+GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
 BASE_DIR   = Path(__file__).parent
 DATA_FILE  = BASE_DIR / "data" / "contacts.json"
@@ -31,6 +37,56 @@ def load_json(path: Path, default):
 def save_json(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, default=str))
+
+
+def _get_env_key(name: str) -> str:
+    val = os.getenv(name, "")
+    if val:
+        return val
+    env_path = BASE_DIR / ".env"
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if line.startswith(f"{name}="):
+                return line.split("=", 1)[1].strip()
+    return ""
+
+
+def _ai_generate(prompt: str, system: str = "") -> str:
+    """Call Groq first, fall back to Gemini."""
+    groq_key = _get_env_key("GROQ_API_KEY")
+    if groq_key:
+        try:
+            messages = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+            body = json.dumps({"model": GROQ_MODEL, "messages": messages, "temperature": 0.7, "max_tokens": 2048}).encode()
+            req = urllib.request.Request(
+                GROQ_URL, data=body,
+                headers={"Content-Type": "application/json", "Authorization": f"Bearer {groq_key}", "User-Agent": "Mozilla/5.0 (compatible; job-search-bot/1.0)"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.loads(r.read())["choices"][0]["message"]["content"]
+        except Exception as e:
+            print(f"  Groq error, trying Gemini: {e}")
+
+    gemini_key = _get_env_key("GEMINI_API_KEY")
+    if gemini_key:
+        contents = []
+        if system:
+            contents.append({"role": "user", "parts": [{"text": f"[System]: {system}"}]})
+            contents.append({"role": "model", "parts": [{"text": "Understood."}]})
+        contents.append({"role": "user", "parts": [{"text": prompt}]})
+        body = json.dumps({"contents": contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}).encode()
+        req = urllib.request.Request(
+            f"{GEMINI_URL}?key={gemini_key}", data=body,
+            headers={"Content-Type": "application/json"}, method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read())["candidates"][0]["content"]["parts"][0]["text"]
+
+    raise RuntimeError("No AI provider available. Add GROQ_API_KEY to .env")
 
 
 def _sync_excel(contacts: list) -> None:
@@ -111,6 +167,18 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         elif path == "/api/criteria":
             save_json(CRITERIA_FILE, data)
             self._json_response({"ok": True})
+
+        elif path == "/api/ai":
+            prompt = data.get("prompt", "")
+            system = data.get("system", "")
+            if not prompt:
+                self._error(400, "prompt is required")
+                return
+            try:
+                text = _ai_generate(prompt, system)
+                self._json_response({"text": text})
+            except Exception as e:
+                self._error(500, str(e))
 
         elif path == "/api/reseed":
             try:
