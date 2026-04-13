@@ -1,0 +1,23 @@
+# Secrets — never commit these
+.env
+data/gmail_token.json
+credentials.json
+
+# Data store — user's personal contact data
+data/contacts.json
+data/criteria.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node (LinkedIn MCP)
+node_modules/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db

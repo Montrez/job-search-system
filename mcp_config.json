@@ -1,0 +1,22 @@
+{
+  "_comment": "Add these entries to your Claude/Cowork MCP config. On Mac: ~/.claude/claude_desktop_config.json",
+  "mcpServers": {
+    "job_search": {
+      "_comment": "Your custom job search tools — contact management, Gemini AI, weekly check-in",
+      "command": "python",
+      "args": ["/FULL/PATH/TO/job_search_system/job_search_mcp.py"],
+      "env": {
+        "GEMINI_API_KEY": "AIzaSyANeS5YgEcNBjeRyq5z_hhTNPFrdqM3Oxo"
+      }
+    },
+    "linkedin": {
+      "_comment": "LinkedIn browser automation — search jobs, find recruiters, view profiles",
+      "command": "uvx",
+      "args": ["linkedin-mcp-server"],
+      "env": {
+        "LINKEDIN_EMAIL": "montrez.cox@gmail.com",
+        "LINKEDIN_PASSWORD": "YOUR_LINKEDIN_PASSWORD_HERE"
+      }
+    }
+  }
+}
